@@ -1,51 +1,58 @@
-import { Form } from "@remix-run/react";
+import {json, redirect} from "@remix-run/node";
+import { Form, useLoaderData } from "@remix-run/react";
+import { getContact } from "../data";
 import type { FunctionComponent } from "react";
 
 import type { ContactRecord } from "../data";
 
+
+export const loader = async ({ params }: { params: { contactId: string } }) => {
+    const contact = await getContact(params.contactId);
+    if (!contact) {
+        redirect("/");
+    }
+
+    return json({ contact });
+
+}
 export default function Contact() {
-    const contact = {
-        first: "Your",
-        last: "Name",
-        avatar: "https://placekitten.com/200/200",
-        twitter: "your_handle",
-        notes: "Some notes",
-        favorite: true,
-    };
+    const { contact } = useLoaderData<typeof loader>();
 
     return (
         <div id="contact">
             <div>
                 <img
-                    alt={`${contact.first} ${contact.last} avatar`}
-                    key={contact.avatar}
-                    src={contact.avatar}
+                    alt={`${contact?.first} ${contact?.last} avatar`}
+                    key={contact?.avatar}
+                    src={contact?.avatar}
                 />
             </div>
 
             <div>
                 <h1>
-                    {contact.first || contact.last ? (
+                    {contact?.first || contact?.last ? (
                         <>
-                            {contact.first} {contact.last}
+                            {contact?.first} {contact?.last}
                         </>
                     ) : (
                         <i>No Name</i>
                     )}{" "}
-                    <Favorite contact={contact} />
+                    {
+                        contact ? <Favorite contact={{ favorite: contact?.favorite }} /> : null
+                    }
                 </h1>
 
-                {contact.twitter ? (
+                {contact?.twitter ? (
                     <p>
                         <a
-                            href={`https://twitter.com/${contact.twitter}`}
+                            href={`https://twitter.com/${contact?.twitter}`}
                         >
-                            {contact.twitter}
+                            {contact?.twitter}
                         </a>
                     </p>
                 ) : null}
 
-                {contact.notes ? <p>{contact.notes}</p> : null}
+                {contact?.notes ? <p>{contact?.notes}</p> : null}
 
                 <div>
                     <Form action="edit">
@@ -75,7 +82,7 @@ export default function Contact() {
 const Favorite: FunctionComponent<{
     contact: Pick<ContactRecord, "favorite">;
 }> = ({ contact }) => {
-    const favorite = contact.favorite;
+    const favorite = contact?.favorite;
 
     return (
         <Form method="post">
